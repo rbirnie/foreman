@@ -4,7 +4,8 @@
 <%= trend_chart 'trend_graph', "#{@title}", "last #{@range} days", trend_data(@trends, @range.days.ago) %>
 
 <table class="table table-condensed" >
-  <% head = @hosts ? "Hosts" : "Values" %>  <th colspan="4"><%= head %></th>
+  <% head = @hosts ? "Hosts" : "Values" %>
+  <th colspan="4"><%= head %></th>
   <tr>
     <% list = @hosts.nil? ? @trends : @hosts %>
     <% list.in_groups(4, false) do |group| %>
@@ -13,12 +14,25 @@
             <% group.each do |item| -%>
                 <ul class="base">
                   <li>
-                    <% opts = item.name? ? item.name : item.fact_value %>
-                    <% if @hosts %>
+                    <% if @hosts && @trends.first.is_a?(FactTrend) %>
+                      <%= link_to(item.host, host_path(:host_id => item.host), :title => "Show host facts") %>
+                    <% elsif @hosts %>
+                      <% opts = item.name? ? item.name : item.fact_value %>
                       <%= link_to(opts, host_path(:id => opts), :title => "Show Host") %>
-                    <% else %><table class="table table-condensed table-layout: fixed"><tr><td style="width: 80%; border-top: none" >
-                      <%= link_to opts, trend_path(:id => item.id, 
-                                                   :search => "facts.#{item.fact_name} = \"#{item.fact_value}\""),                                                   :title => "Trend Details" %></td><td style="width: 20%; border-top: none"><%= item.trend_counters.last.count %></td></tr></table>
+                    <% else %>
+                      <% opts = item.name? ? item.name : item.fact_value %>
+                      <table class="table table-condensed table-layout: fixed">
+                        <tr>
+                          <td style="width: 80%; border-top: none" >
+                            <%= link_to opts, trend_path(:id => item.id,
+                                                         :search => "facts.#{item.fact_name} = \"#{item.fact_value}\""),
+                                                         :title => "Trend Details" %>
+                          </td>
+                          <td style="width: 20%; border-top: none">
+                            <%= item.trend_counters.last.count %>
+                          </td>
+                        </tr>
+                      </table>
                     <% end %>
                   </li>
                 </ul>

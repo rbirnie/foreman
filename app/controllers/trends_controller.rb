@@ -1,7 +1,7 @@
 class TrendsController < ApplicationController
 
   def index
-    @trends  = Trend.group(:trendable_type, :fact_name).where(:fact_value => nil)
+    @trends  = Trend.group(:trendable_type, :fact_name).where(:fact_value => nil).sort_by {|e| e.type_name }
   end
 
   def new
@@ -12,11 +12,15 @@ class TrendsController < ApplicationController
     trend = Trend.find(params[:id])
     if trend.fact_value == nil
       opts = trend.is_a?(FactTrend) ? {:trendable_id => trend.trendable_id} : {}
-      @trends= Trend.has_value.where(opts.merge(:trendable_type => trend.trendable_type))
+      @trends= Trend.has_value.where(opts.merge(:trendable_type => trend.trendable_type)).sort_by {|e| e.fact_value }
       @title = "#{trend.type_name.camelcase}"
     else # Display Single Trend
       @trends= Trend.has_value.where(:id => trend.id)
-      @hosts = trend.is_a?(FactTrend) ? FactValue.my_facts.no_timestamp_facts.search_for(params[:search]).required_fields : trend.trendable.hosts
+      if trend.is_a?(FactTrend)
+        @hosts = FactValue.my_facts.no_timestamp_facts.search_for(params[:search]).required_fields.sort_by {|e| e.host }
+      else
+        @hosts = trend.trendable.hosts.find(:all, :order => 'name')
+      end
       @title = "#{trend.type_name.camelcase} - #{trend.fact_value}"
     end
     @range = (params["range"].empty? ? 30 : params["range"].to_i)
