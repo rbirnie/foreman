@@ -3,9 +3,8 @@
 
 <%= trend_chart 'trend_graph', "#{@title}", "last #{@range} days", trend_data(@trends, @range.days.ago) %>
 
-<table class="table" >
-  <% head = @hosts ? "Hosts" : "Values" %>
-  <th colspan="4"><%= head %></th>
+<table class="table table-condensed" >
+  <% head = @hosts ? "Hosts" : "Values" %>  <th colspan="4"><%= head %></th>
   <tr>
     <% list = @hosts.nil? ? @trends : @hosts %>
     <% list.in_groups(4, false) do |group| %>
@@ -17,10 +16,9 @@
                     <% opts = item.name? ? item.name : item.fact_value %>
                     <% if @hosts %>
                       <%= link_to(opts, host_path(:id => opts), :title => "Show Host") %>
-                    <% else %>
+                    <% else %><table class="table table-condensed table-layout: fixed"><tr><td style="width: 80%; border-top: none" >
                       <%= link_to opts, trend_path(:id => item.id, 
-                                                   :search => "facts.#{item.fact_name} = \"#{item.fact_value}\""), 
-                                                   :title => "Trend Details" %>
+                                                   :search => "facts.#{item.fact_name} = \"#{item.fact_value}\""),                                                   :title => "Trend Details" %></td><td style="width: 20%; border-top: none"><%= item.trend_counters.last.count %></td></tr></table>
                     <% end %>
                   </li>
                 </ul>
