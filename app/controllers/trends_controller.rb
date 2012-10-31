@@ -12,7 +12,7 @@ class TrendsController < ApplicationController
     trend = Trend.find(params[:id])
     if trend.fact_value == nil
       opts = trend.is_a?(FactTrend) ? {:trendable_id => trend.trendable_id} : {}
-      @trends= Trend.has_value.where(opts.merge(:trendable_type => trend.trendable_type)).sort_by {|e| e.fact_value }
+      @trends= Trend.has_value.where(opts.merge(:trendable_type => trend.trendable_type)).find(:all, :order => "LOWER(fact_value)") # .sort_by {|e| e.fact_value }
       @title = "#{trend.type_name.camelcase}"
     else # Display Single Trend
       @trends= Trend.has_value.where(:id => trend.id)
