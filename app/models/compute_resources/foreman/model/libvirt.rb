@@ -94,12 +94,12 @@ module Foreman::Model
 
       opts.reject! { |k, v| v.nil? }
       opts[:volumes].map! do |volume|
-        if volume.instance_of?(Hash) && volume[:id].present?
-          vol = client.volumes.get(volume[:id])
+        if volume.instance_of?(Hash) && volume[:key].present?
+          vol = client.volumes.get(volume[:key])
           vol.format_type = volume[:format_type]
           vol
         elsif volume.instance_of?(Hash)
-          volume.except! :id
+          volume.except! :key
         else
           volume
         end
@@ -177,11 +177,11 @@ module Foreman::Model
     end
 
     def create_volumes args
-      args[:volumes].each {|vol| validate_volume_capacity(vol) unless vol.id }
+      args[:volumes].each {|vol| validate_volume_capacity(vol) unless vol.key }
       begin
         vols = []
         (volumes = args[:volumes]).each do |vol|
-          unless vol.id
+          unless vol.key
             vol.name       = "#{args[:prefix]}-disk#{volumes.index(vol)+1}"
             vol.allocation = "#{vol.allocation}G" unless vol.allocation.to_s.end_with?('G')
             vol.capacity = "#{vol.capacity}G" unless vol.capacity.to_s.end_with?('G')
@@ -191,8 +191,8 @@ module Foreman::Model
         end
         vols
       rescue => e
-        logger.debug "Failure detected #{e}: removsg already created volumes" if vols.any?
-        vols.each { |vol| vol.destroy unless vol.id.present? }
+        logger.debug "Failure detected #{e}: removing already created volumes" if vols.any?
+        vols.each { |vol| vol.destroy unless vol.key.present? }
         raise e
       end
     end

@@ -1,11 +1,10 @@
 <div class="fields">
   <div class="form-group">
-    <%= selectable_f f, :id, compute_resource.volumes.collect { |p| [ "#{p.name} (#{p.path})", p.id ] }, {:include_blank => _("New")}, :class => "span2", :label => _("Storage Pool Volumes"), :onchange => 'libvirt_volume_selected(this)', :help_inline => remove_child_link("X", f, { :method => :'_delete', :title => _('remove volume'), :class => 'label label-danger disable-unsupported' }) %>
-    <div id='new_vol' class='<%= 'hide' if f.object.id != nil && current_page?(:action => 'new') %>'>
-      <%= selectable_f f, :pool_name, compute_resource.storage_pools.map(&:name), { }, :class => "col-md-2", :label => _("Storage pool"), :disabled => f.object.id.blank? %>
-      <%= text_f f, :capacity, :class => "col-md-2", :label => _("Size (GB)"), :onchange => 'capacity_edit(this)', :disabled => f.object.id.blank? %>
+    <%= selectable_f f, :key, compute_resource.volumes.collect { |p| [ "#{p.name} (#{p.path})", p.key ] }, {:include_blank => _("New")}, :class => "span2", :label => _("Storage Pool Volumes"), :onchange => 'libvirt_volume_selected(this)', :help_inline => remove_child_link("X", f, { :method => :'_delete', :title => _('remove volume'), :class => 'label label-danger disable-unsupported' }) %>
+    <div id='new_vol' class='<%= 'hide' if f.object.key != nil && current_page?(:action => 'new') %>'>
+      <%= selectable_f f, :pool_name, compute_resource.storage_pools.map(&:name), { }, :class => "col-md-2", :label => _("Storage pool"), :disabled => f.object.key.blank? %>
+      <%= text_f f, :capacity, :class => "col-md-2", :label => _("Size (GB)"), :onchange => 'capacity_edit(this)', :disabled => f.object.key.blank? %>
       <%= allocation_text_f f %>
-
     </div>
     <%= select_f f, :format_type, %w[RAW QCOW2],:downcase, :to_s, { }, :class => "col-md-2", :label => _("Type") %>
   </div>
