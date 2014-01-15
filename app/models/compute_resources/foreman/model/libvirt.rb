@@ -77,6 +77,10 @@ module Foreman::Model
       client.networks rescue []
     end
 
+    def volumes
+      client.volumes.all rescue []
+    end
+
     def new_vm attr={ }
       test_connection
       return unless errors.empty?
@@ -89,6 +93,17 @@ module Foreman::Model
       end
 
       opts.reject! { |k, v| v.nil? }
+      opts[:volumes].map! do |volume|
+        if volume.instance_of?(Hash) && volume[:id].present?
+          vol = client.volumes.get(volume[:id])
+          vol.format_type = volume[:format_type]
+          vol
+        elsif volume.instance_of?(Hash)
+          volume.except! :id
+        else
+          volume
+        end
+      end
 
       vm = client.servers.new opts
       vm.memory = opts[:memory] if opts[:memory]
@@ -162,20 +177,22 @@ module Foreman::Model
     end
 
     def create_volumes args
-      args[:volumes].each {|vol| validate_volume_capacity(vol)}
+      args[:volumes].each {|vol| validate_volume_capacity(vol) unless vol.id }
       begin
         vols = []
         (volumes = args[:volumes]).each do |vol|
-          vol.name       = "#{args[:prefix]}-disk#{volumes.index(vol)+1}"
-          vol.capacity = "#{vol.capacity}G" unless vol.capacity.to_s.end_with?('G')
-          vol.allocation = "#{vol.allocation}G" unless vol.allocation.to_s.end_with?('G')
-          vol.save
+          unless vol.id
+            vol.name       = "#{args[:prefix]}-disk#{volumes.index(vol)+1}"
+            vol.allocation = "#{vol.allocation}G" unless vol.allocation.to_s.end_with?('G')
+            vol.capacity = "#{vol.capacity}G" unless vol.capacity.to_s.end_with?('G')
+            vol.save
+          end
           vols << vol
         end
         vols
       rescue => e
-        logger.debug "Failure detected #{e}: removing already created volumes" if vols.any?
-        vols.each { |vol| vol.destroy }
+        logger.debug "Failure detected #{e}: removsg already created volumes" if vols.any?
+        vols.each { |vol| vol.destroy unless vol.id.present? }
         raise e
       end
     end
