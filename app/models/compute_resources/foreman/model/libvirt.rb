@@ -62,7 +62,11 @@ module Foreman::Model
     end
 
     def new_volume attr={ }
-      client.volumes.new(attrs.merge(:allocation => '0G'))
+      unless (volumes = Rails.cache.read("#{self.id}_volumes")) && attr.blank?
+        new_volume = client.volumes.new(attrs.merge(:allocation => '0G'))
+        Rails.cache.write("#{self.id}_volumes", volumes.to_a, {:expires_in  => 10.minute }) # if Rails.env.production?
+      end
+      new_volume
     end
 
     def storage_pools
@@ -78,7 +82,31 @@ module Foreman::Model
     end
 
     def volumes
-      client.volumes.all rescue []
+      unless (volumes = Rails.cache.read("#{self.id}_volumes"))
+        volumes = client.volumes.all rescue []
+        Rails.cache.write("#{self.id}_volumes", volumes.to_a, {:expires_in  => 10.minute }) # if Rails.env.production?
+      end
+      volumes
+    end
+
+    def free_volumes
+      unless (free_volumes = Rails.cache.read("#{self.id}_free_volumes"))
+        vols = Set.new
+        servers.each do |s|
+          s.volumes.each { |v| vols << v.key }
+        end
+        free_volumes = volumes.reject! { |v| vols.include? v.key }
+        Rails.cache.write("#{self.id}_free_volumes", free_volumes.to_a, {:expires_in  => 10.minute }) # if Rails.env.production?
+      end
+      free_volumes
+    end
+
+    def servers
+      unless (free_volumes = Rails.cache.read("#{self.id}_servers"))
+        servers = client.servers rescue []
+        Rails.cache.write("#{self.id}_servers", servers.to_a, {:expires_in  => 10.minute }) # if Rails.env.production?
+      end
+      servers
     end
 
     def new_vm attr={ }
@@ -138,7 +166,11 @@ module Foreman::Model
     end
 
     def hypervisor
-      client.nodes.first
+      unless (hypervisor = Rails.cache.read("#{self.id}_hypervisor"))
+        hypervisor = client.nodes.first
+        Rails.cache.write("#{self.id}_hypervisor", hypervisor, {:expires_in  => 60.minute }) # if Rails.env.production?
+      end
+      hypervisor
     end
 
     def associated_host(vm)
